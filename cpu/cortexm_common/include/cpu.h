@@ -55,6 +55,13 @@ extern "C" {
  */
 void cpu_init(void);
 
+#if CLOCK_USE_ADAPTIVE
+/**
+ * @brief   Change system clock
+ */
+void sysclk_change(bool fastclk);
+#endif
+
 /**
  * @brief   Initialize Cortex-M specific core parts of the CPU
  */
