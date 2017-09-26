@@ -51,7 +51,13 @@ int apds9007_init(apds9007_t *dev, const apds9007_params_t *params) {
 int apds9007_read(apds9007_t *dev, int16_t *light) {
     apds9007_set_active(dev);
     xtimer_usleep(APDS9007_STABILIZATION_TIME);
+#if CLOCK_USE_ADAPTIVE
+    sysclk_change(true);
+#endif
     *light = (int16_t) adc_sample(dev->p.adc, dev->p.res);
+#if CLOCK_USE_ADAPTIVE
+    sysclk_change(false);
+#endif
     apds9007_set_idle(dev);
     return 0;
 }
