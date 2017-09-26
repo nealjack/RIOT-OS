@@ -172,19 +172,6 @@ typedef struct {
 } fxos8700_t;
 
 /**
-  * @brief   Individual hybrid measurement
-  * @{
-  */
-typedef struct {
-    int16_t acc_x;
-    int16_t acc_y;
-    int16_t acc_z;
-    int16_t mag_x;
-    int16_t mag_y;
-    int16_t mag_z;
-} fxos8700_measurement_t;
-
-/**
   * @brief   Individual accel measurement
   * @{
   */
@@ -267,13 +254,13 @@ typedef union {
  * @return                  -1 on error
  * @return                  -2 on invalid address
  */
-int fxos8700_init(fxos8700_t* dev, const fxos8700_params_t* params); //i2c_t i2c, uint8_t addr);
+int fxos8700_init(fxos8700_t* dev, const fxos8700_params_t* params);
 
 int fxos8700_set_active(fxos8700_t* dev);
 
 int fxos8700_set_idle(fxos8700_t* dev);
 
-int fxos8700_read(fxos8700_t* dev, fxos8700_measurement_t* m);
+int fxos8700_read(fxos8700_t* dev);
 
 int fxos8700_read_mag(fxos8700_t* dev, fxos8700_measurement_mag_t* m);
 

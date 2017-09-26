@@ -22,14 +22,31 @@
 #define ENABLE_DEBUG (0)
 #include "debug.h"
 
-
-#define I2C_SPEED            I2C_SPEED_NORMAL
-
 #define ACCEL_ONLY_MODE      0x00
 #define MAG_ONLY_MODE        0x01
 #define HYBRID_MODE          0x03
 
+#ifndef FXOS8700_RENEW_INTERVAL
+#define FXOS8700_RENEW_INTERVAL 1000000ul 
+#endif
 
+int16_t acc_x_cached = 0;
+int16_t acc_y_cached = 0;
+int16_t acc_z_cached = 0;
+int16_t mag_x_cached = 0;
+int16_t mag_y_cached = 0;
+int16_t mag_z_cached = 0;
+
+void fxos8700_renew_timer_cb(void *arg) {
+    acc_x_cached = 0;
+    acc_y_cached = 0;
+    acc_z_cached = 0;
+    mag_x_cached = 0;
+    mag_y_cached = 0;
+    mag_z_cached = 0;
+}
+
+xtimer_t fxos8700_renew_timer = {.callback = fxos8700_renew_timer_cb};
 
 static int fxos8700_read_regs(fxos8700_t* dev, uint8_t reg, uint8_t* data, size_t len)
 {
@@ -77,7 +94,7 @@ int fxos8700_init(fxos8700_t* dev, const fxos8700_params_t *params)
     dev->p.addr = params->addr;
 
     i2c_acquire(dev->p.i2c);
-    if(i2c_init_master(dev->p.i2c, I2C_SPEED_NORMAL) != 0) {
+    if(i2c_init_master(dev->p.i2c, I2C_SPEED_FAST) != 0) {
         DEBUG("[fxos8700] Can't initialize I2C master\n");
         i2c_release(dev->p.i2c);
         return -3;
@@ -136,7 +153,7 @@ int fxos8700_set_idle(fxos8700_t* dev)
     return 0;
 }
 
-int fxos8700_read(fxos8700_t* dev, fxos8700_measurement_t* m)
+int fxos8700_read(fxos8700_t* dev)
 {
     uint8_t data[12];
     uint8_t ready = 0;
@@ -144,14 +161,14 @@ int fxos8700_read(fxos8700_t* dev, fxos8700_measurement_t* m)
     if (fxos8700_set_active(dev)) {
         return -1;
     }
-
+    
     while(!(ready & 0x08)) {
         fxos8700_read_regs(dev, FXOS8700_REG__STATUS, &ready, 1);
     }
     while(!(ready & 0x08)) {
         fxos8700_read_regs(dev, FXOS8700_REG_M_DR_STATUS, &ready, 1);
     }
-
+    
     /* Read all data at once */
     if (fxos8700_read_regs(dev, FXOS8700_REG_OUT_X_MSB, &data[0], 12)) {
         return -2;
@@ -162,80 +179,50 @@ int fxos8700_read(fxos8700_t* dev, fxos8700_measurement_t* m)
     }
 
     /* Read accelerometer */
-    m->acc_x = (int16_t) ((data[0]<<6) | (data[1]>>2));
-    m->acc_y = (int16_t) ((data[2]<<6) | (data[3]>>2));
-    m->acc_z = (int16_t) ((data[4]<<6) | (data[5]>>2));
+    acc_x_cached = (int16_t) ((data[0]<<6) | (data[1]>>2));
+    acc_y_cached = (int16_t) ((data[2]<<6) | (data[3]>>2));
+    acc_z_cached = (int16_t) ((data[4]<<6) | (data[5]>>2));
 
     /* Read magnetometer */
-    m->mag_x = (int16_t) ((data[6] <<8) | data[7]);
-    m->mag_y = (int16_t) ((data[8] <<8) | data[9]);
-    m->mag_z = (int16_t) ((data[10]<<8) | data[11]);
+    mag_x_cached = (int16_t) ((data[6] <<8) | data[7]);
+    mag_y_cached = (int16_t) ((data[8] <<8) | data[9]);
+    mag_z_cached = (int16_t) ((data[10]<<8) | data[11]);
 
     return 0;
 }
 
 int fxos8700_read_mag(fxos8700_t* dev, fxos8700_measurement_mag_t* m)
 {
-    uint8_t data[12];
-    uint8_t ready = 0;
-
-    if (fxos8700_set_active(dev)) {
-        return -1;
+    if ((mag_x_cached == 0) && (mag_y_cached == 0) && (mag_z_cached == 0)) {
+        fxos8700_read(dev);
+        xtimer_set(&fxos8700_renew_timer, FXOS8700_RENEW_INTERVAL);
+    } else {
+        xtimer_remove(&fxos8700_renew_timer);
     }
-
-    while(!(ready & 0x08)) {
-        fxos8700_read_regs(dev, FXOS8700_REG__STATUS, &ready, 1);
-    }
-    while(!(ready & 0x08)) {
-        fxos8700_read_regs(dev, FXOS8700_REG_M_DR_STATUS, &ready, 1);
-    }
-
-    /* Read all data at once */
-    if (fxos8700_read_regs(dev, FXOS8700_REG_OUT_X_MSB, &data[0], 12)) {
-        return -2;
-    }
-
-    if (fxos8700_set_idle(dev)) {
-        return -3;
-    }
-
-    /* Read magnetometer */
-    m->mag_x = (int16_t) ((data[6] <<8) | data[7]);
-    m->mag_y = (int16_t) ((data[8] <<8) | data[9]);
-    m->mag_z = (int16_t) ((data[10]<<8) | data[11]);
-
+    /* Read cached data */
+    m->mag_x = mag_x_cached;
+    m->mag_y = mag_y_cached;
+    m->mag_z = mag_z_cached;
+    mag_x_cached = 0;
+    mag_y_cached = 0;
+    mag_z_cached = 0;
     return 0;
 }
 
 int fxos8700_read_acc(fxos8700_t* dev, fxos8700_measurement_acc_t* m)
 {
-    uint8_t data[12];
-    uint8_t ready = 0;
-
-    if (fxos8700_set_active(dev)) {
-        return -1;
+    if ((acc_x_cached == 0) && (acc_y_cached == 0) && (acc_z_cached == 0)) {
+        fxos8700_read(dev);
+        xtimer_set(&fxos8700_renew_timer, FXOS8700_RENEW_INTERVAL);
+    } else {
+        xtimer_remove(&fxos8700_renew_timer);
     }
-
-    while(!(ready & 0x08)) {
-        fxos8700_read_regs(dev, FXOS8700_REG__STATUS, &ready, 1);
-    }
-	while(!(ready & 0x08)) {
-        fxos8700_read_regs(dev, FXOS8700_REG_M_DR_STATUS, &ready, 1);
-    }
-
-    /* Read all data at once */
-    if (fxos8700_read_regs(dev, FXOS8700_REG_OUT_X_MSB, &data[0], 12)) {
-	    return -2;
-    }
-
-    if (fxos8700_set_idle(dev)) {
-        return -3;
-    }
-
-    /* Read accelerometer */
-    m->acc_x = (int16_t) ((data[0]<<6) | (data[1]>>2));
-    m->acc_y = (int16_t) ((data[2]<<6) | (data[3]>>2));
-    m->acc_z = (int16_t) ((data[4]<<6) | (data[5]>>2));
-
+    /* Read cached data */
+    m->acc_x = acc_x_cached;
+    m->acc_y = acc_y_cached;
+    m->acc_z = acc_z_cached;
+    acc_x_cached = 0;
+    acc_y_cached = 0;
+    acc_z_cached = 0;
     return 0;
 }
