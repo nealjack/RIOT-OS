@@ -227,22 +227,41 @@ void tmp006_convert(int16_t rawv, int16_t rawt,  float *tamb, float *tobj)
 
 int tmp006_read_temperature(const tmp006_t *dev, int16_t *ta, int16_t *to)
 {
+    uint8_t drdy;
+
+#if SENSOR_COMPUTOFFLOAD
+    if (tmp006_set_active(dev)) {
+        return TMP006_ERROR;
+    }
+    xtimer_usleep(TMP006_CONVERSION_TIME);
+    tmp006_read(dev, ta, to, &drdy);
+    
+    if (!drdy) {
+        return TMP006_ERROR;
+    }
+#else
     int16_t rawtemp, rawvolt;
     float tamb, tobj;
-    uint8_t drdy;
 
     if (tmp006_set_active(dev)) {
         return TMP006_ERROR;
     }
     xtimer_usleep(TMP006_CONVERSION_TIME);
     tmp006_read(dev, &rawvolt, &rawtemp, &drdy);
-
+    
     if (!drdy) {
         return TMP006_ERROR;
     }
+#if CLOCK_USE_ADAPTIVE
+    sysclk_change(true);
+#endif
     tmp006_convert(rawvolt, rawtemp,  &tamb, &tobj);
     *ta = (int16_t)(tamb*100);
     *to = (int16_t)(tobj*100);
+#if CLOCK_USE_ADAPTIVE
+    sysclk_change(false);
+#endif
+#endif
     
     if (tmp006_set_standby(dev)) {
         return TMP006_ERROR;
