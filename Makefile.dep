@@ -651,6 +651,11 @@ USEPKG += nanocoap
 USEMODULE += gnrc_sock_udp
 endif
 
+ifneq (,$(filter openthread,$(USEPKG)))
+USEMODULE += openthread_contrib
+USEMODULE += mbedcrypto
+endif
+
 # include package dependencies
 -include $(USEPKG:%=$(RIOTPKG)/%/Makefile.dep)
 

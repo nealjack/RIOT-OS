@@ -48,3 +48,5 @@ Makefile.local
 .ycm_extra_conf.pyc
 __pycache__
 .dlcache
+# OpenThread pkg
+/pkg/openthread/source*

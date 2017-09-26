@@ -1,4 +1,4 @@
-APPLICATION = openthread
+APPLICATION = openthread_ncp
 
 # If no BOARD is found in the environment, use this default:
 BOARD ?= samr21-xpro
@@ -17,27 +17,15 @@ RIOTBASE ?= $(CURDIR)/../..
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
 
+# NCP: A Network Co-Processor is used with wpantund software. wpantund is a user-space network
+# interface driver/daemon that provides a native IPv6 network interface to a low-power wireless Network Co-Processor
+# FTD (see openthread_test_ftd): NCP needs Full Thread Device to act as a router in the network
 USEPKG += openthread
-OPENTHREAD_TYPE ?= ftd
-ifeq ($(OPENTHREAD_TYPE),mtd)
-    # MTD: A Minimal Thread Device does not have router functionality
-    # compiled in. As a result, it is not necessary to configure the
-    # routerrole on an MTD. At the same time, an MTD may or may not be sleepy.
-    USEMODULE += openthread-mtd
-    USEMODULE += openthread-cli-mtd
-else
-    # ftd: A Full Thread Device has router functionality compiled in
-    USEMODULE += openthread-ftd
-    USEMODULE += openthread-cli-ftd
-endif
+USEMODULE += openthread-ftd
+USEMODULE += openthread-ncp-ftd
 
-#Define PANID, CHANNEL and UART_BAUDRATE used by default
-OPENTHREAD_PANID ?= 0xbeef
-OPENTHREAD_CHANNEL ?= 26
+#Define UART_BAUDRATE used by default
 OPENTHREAD_UART_BAUDRATE ?= 115200
-
-CFLAGS += -DOPENTHREAD_PANID=${OPENTHREAD_PANID}
-CFLAGS += -DOPENTHREAD_CHANNEL=${OPENTHREAD_CHANNEL}
 CFLAGS += -DOPENTHREAD_UART_BAUDRATE=${OPENTHREAD_UART_BAUDRATE}
 
 ifneq (,$(filter samr21-xpro,$(BOARD)))
