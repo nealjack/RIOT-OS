@@ -532,11 +532,16 @@ static void _isr(netdev_t *netdev)
     /* If transceiver is sleeping register access is impossible and frames are
      * lost anyway, so return immediately.
      */
+#if CLOCK_USE_ADAPTIVE
+    sysclk_change(true);
+#endif
     state = at86rf2xx_get_status(dev);
     if (state == AT86RF2XX_STATE_SLEEP) {
+#if CLOCK_USE_ADAPTIVE
+        sysclk_change(false);
+#endif
         return;
     }
-
     /* read (consume) device status */
     irq_mask = at86rf2xx_reg_read(dev, AT86RF2XX_REG__IRQ_STATUS);
 
@@ -616,4 +621,7 @@ static void _isr(netdev_t *netdev)
             }
         }
     }
+#if CLOCK_USE_ADAPTIVE
+    sysclk_change(false);
+#endif
 }

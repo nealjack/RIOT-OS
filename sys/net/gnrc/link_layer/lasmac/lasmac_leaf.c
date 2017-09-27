@@ -187,7 +187,6 @@ static void _event_cb(netdev_t *dev, netdev_event_t event)
 					msg.type = GNRC_NETDEV_DUTYCYCLE_MSG_TYPE_EVENT;
 					msg_send(&msg, gnrc_lasmac_netdev->pid);
 				}
-
 				if (pkt) {
 					_pass_on_packet(pkt);
 				}
