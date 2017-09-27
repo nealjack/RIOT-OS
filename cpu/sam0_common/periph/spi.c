@@ -168,9 +168,6 @@ void spi_release(spi_t bus)
 
 int spi_dma_transact(spi_t bus, const volatile void* out, volatile void* in, size_t len);
 
-dma_channel_t spi_read_dma_channel = DMA_CHANNEL_UNDEF;
-dma_channel_t spi_write_dma_channel = DMA_CHANNEL_UNDEF;
-
 void spi_transfer_bytes(spi_t bus, spi_cs_t cs, bool cont,
                         const void *out, void *in, size_t len)
 {
@@ -183,7 +180,7 @@ void spi_transfer_bytes(spi_t bus, spi_cs_t cs, bool cont,
         gpio_clear((gpio_t)cs);
     }
 
-    if (spi_read_dma_channel == DMA_CHANNEL_UNDEF || irq_is_in()) {
+    if (len <= 1 || spi_state[bus].read_dma_channel == DMA_CHANNEL_UNDEF || irq_is_in()) {
         for (int i = 0; i < (int)len; i++) {
             uint8_t tmp = (out_buf) ? out_buf[i] : 0;
             while (!(dev(bus)->INTFLAG.reg & SERCOM_SPI_INTFLAG_DRE)) {}
