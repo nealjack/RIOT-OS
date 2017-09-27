@@ -39,6 +39,7 @@ volatile uint32_t _xtimer_high_cnt = 0;
 #if (XTIMER_HZ < 1000000ul) && (STIMER_HZ >= 1000000ul)
 volatile uint32_t prev_s = 0xffffffff;
 volatile uint32_t prev_x = 0xffffffff;
+uint8_t init = 0;
 #endif
 
 static inline void xtimer_spin_until(uint32_t value);
@@ -82,6 +83,9 @@ void xtimer_init(void)
      * STIMER must be faster than XTIMER (e.g., 8 MHz or 48 MHz).
      */
     timer_init(STIMER_DEV, STIMER_HZ, _periph_timer_callback, NULL);
+    prev_s = _stimer_lltimer_now();
+    prev_x = _xtimer_lltimer_now();
+    printf("%lu %lu\n",prev_x, prev_s);
 #endif
     /* register initial overflow tick */
     _lltimer_set(0xFFFFFFFF);
@@ -165,9 +169,14 @@ void _xtimer_set(xtimer_t *timer, uint32_t offset)
         _shoot(timer);
     }
     else {
-        uint32_t now = _xtimer_now();
-        uint32_t target = now + offset;
-        _xtimer_set_absolute(timer, target, now);
+        if (!init) {
+            prev_x = _xtimer_lltimer_now();
+            prev_s = _stimer_lltimer_now();
+            init = 1;
+        }
+        prev_x = _xtimer_now();
+        uint32_t target = prev_x + offset;
+        _xtimer_set_absolute(timer, target, prev_x);
     }
 }
 
