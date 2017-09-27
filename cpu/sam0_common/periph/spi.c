@@ -137,8 +137,11 @@ int spi_acquire(spi_t bus, spi_cs_t cs, spi_mode_t mode, spi_clk_t clk)
     /* configure bus clock, in synchronous mode its calculated from
      * BAUD.reg = (f_ref / (2 * f_bus) - 1)
      * with f_ref := CLOCK_CORECLOCK as defined by the board */
+#if CLOCK_USE_ADAPTIVE
+    dev(bus)->BAUD.reg = (uint8_t)(((uint32_t)CLOCK_CORECLOCK_HIGH) / (2 * clk) - 1);
+#else
     dev(bus)->BAUD.reg = (uint8_t)(((uint32_t)CLOCK_CORECLOCK) / (2 * clk) - 1);
-
+#endif
     /* configure device to be master and set mode and pads,
      *
      * NOTE: we could configure the pads already during spi_init, but for
