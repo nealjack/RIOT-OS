@@ -217,6 +217,28 @@ void spi_set_dma_channel(spi_t bus, dma_channel_t read_channel, dma_channel_t wr
         dma_channel_reset_current();
         periph_config.periph_src++;
         dma_channel_configure_periph_current(&periph_config);
+
+        /* Configure memory, as far as possible. */
+        dma_channel_memory_config_t memory_config;
+        memory_config.beatsize = DMAC_BEATSIZE_BYTE;
+        memory_config.num_beats = 1;
+        memory_config.stepsize = DMAC_STEPSIZE_X1;
+        memory_config.next_block = NULL;
+
+        /* Configure read DMA channel */
+        SercomSpi* spi = dev(bus);
+        memory_config.increment_destination = true;
+        memory_config.source = &spi->DATA.reg;
+        memory_config.stepsel = DMAC_STEPSEL_DST;
+        memory_config.increment_source = false;
+        dma_channel_configure_memory(read_channel, &memory_config);
+
+        /* Configure write DMA channel */
+        memory_config.increment_source = true;
+        memory_config.destination = &spi->DATA.reg;
+        memory_config.stepsel = DMAC_STEPSEL_SRC;
+        memory_config.increment_destination = false;
+        dma_channel_configure_memory(write_channel, &memory_config);
     }
 
     spi_state[bus].read_dma_channel = read_channel;
@@ -243,44 +265,28 @@ void spi_dma_unblock(void* arg, int error)
 
 int spi_dma_transact(spi_t bus, const volatile void* out, volatile void* in, size_t len)
 {
-    SercomSpi* spi = dev(bus);
     dma_channel_t spi_read_dma_channel = spi_state[bus].read_dma_channel;
     dma_channel_t spi_write_dma_channel = spi_state[bus].write_dma_channel;
 
     const uint8_t dummy_out = 0;
     uint8_t dummy_in = 0;
 
-    dma_channel_memory_config_t memory_config;
-    memory_config.beatsize = DMAC_BEATSIZE_BYTE;
-    memory_config.num_beats = len;
-    memory_config.stepsize = DMAC_STEPSIZE_X1;
-    memory_config.next_block = NULL;
-
-    /* Configure read DMA channel */
-    if (in == NULL) {
-        memory_config.destination = &dummy_in;
-        memory_config.increment_destination = false;
-    } else {
-        memory_config.destination = ((volatile uint8_t*) in) + len;
-        memory_config.increment_destination = true;
-    }
-    memory_config.source = &spi->DATA.reg;
-    memory_config.stepsel = DMAC_STEPSEL_DST;
-    memory_config.increment_source = false;
-    dma_channel_configure_memory(spi_read_dma_channel, &memory_config);
-
-    /* Configure write DMA channel */
     if (out == NULL) {
-        memory_config.source = &dummy_out;
-        memory_config.increment_source = false;
+        dma_channel_set_memory_source_only(spi_write_dma_channel, &dummy_out);
+        dma_channel_set_memory_source_increment_only(spi_write_dma_channel, 0);
     } else {
-        memory_config.source = ((const volatile uint8_t*) out) + len;
-        memory_config.increment_source = true;
+        dma_channel_set_memory_source_only(spi_write_dma_channel, ((const volatile uint8_t*) out) + len);
+        dma_channel_set_memory_source_increment_only(spi_write_dma_channel, 1);
     }
-    memory_config.destination = &spi->DATA.reg;
-    memory_config.stepsel = DMAC_STEPSEL_SRC;
-    memory_config.increment_destination = false;
-    dma_channel_configure_memory(spi_write_dma_channel, &memory_config);
+    if (in == NULL) {
+        dma_channel_set_memory_destination_only(spi_read_dma_channel, &dummy_in);
+        dma_channel_set_memory_destination_increment_only(spi_read_dma_channel, 0);
+    } else {
+        dma_channel_set_memory_destination_only(spi_read_dma_channel, ((volatile uint8_t*) in) + len);
+        dma_channel_set_memory_destination_increment_only(spi_read_dma_channel, 1);
+    }
+    dma_channel_set_memory_num_beats_only(spi_read_dma_channel, len);
+    dma_channel_set_memory_num_beats_only(spi_write_dma_channel, len);
 
     /* Set up thread to properly block */
     struct spi_dma_waiter waiter;

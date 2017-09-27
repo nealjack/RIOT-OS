@@ -48,6 +48,8 @@ typedef unsigned int dma_channel_t;
 
 typedef void (*dma_callback_t)(void*, int);
 
+extern volatile DmacDescriptor descriptor_section[DMAC_EN_CHANNELS];
+
 typedef enum {
     DMAC_BEATSIZE_BYTE = 0,
     DMAC_BEATSIZE_HALFWORD,
@@ -120,6 +122,26 @@ void dma_channel_create_descriptor(volatile void* descriptor, dma_channel_memory
 void dma_channel_configure_memory(dma_channel_t channel, dma_channel_memory_config_t* config);
 volatile void* dma_channel_get_descriptor_address(dma_channel_t channel);
 void dma_channel_trigger(dma_channel_t channel);
+
+inline void dma_channel_set_memory_source_only(dma_channel_t channel, const volatile void* source) {
+    descriptor_section[channel].SRCADDR.reg = (uint32_t) source;
+}
+
+inline void dma_channel_set_memory_source_increment_only(dma_channel_t channel, int source_increment) {
+    descriptor_section[channel].BTCTRL.bit.SRCINC = source_increment;
+}
+
+inline void dma_channel_set_memory_destination_only(dma_channel_t channel, volatile void* destination) {
+    descriptor_section[channel].DSTADDR.reg = (uint32_t) destination;
+}
+
+inline void dma_channel_set_memory_destination_increment_only(dma_channel_t channel, int destination_increment) {
+    descriptor_section[channel].BTCTRL.bit.DSTINC = destination_increment;
+}
+
+inline void dma_channel_set_memory_num_beats_only(dma_channel_t channel, uint16_t num_beats) {
+    descriptor_section[channel].BTCNT.reg = num_beats;
+}
 
 #ifdef __cplusplus
 }
