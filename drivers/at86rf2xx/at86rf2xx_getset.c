@@ -345,7 +345,7 @@ void at86rf2xx_set_option(at86rf2xx_t *dev, uint16_t option, bool state)
                 /* Initialize CSMA seed with hardware address */
                 at86rf2xx_set_csma_seed(dev, dev->netdev.long_addr);
                 at86rf2xx_set_csma_max_retries(dev, 4);
-                at86rf2xx_set_csma_backoff_exp(dev, 3, 5);
+                at86rf2xx_set_csma_backoff_exp(dev, 8, 8);
                 break;
             case AT86RF2XX_OPT_PROMISCUOUS:
                 DEBUG("[at86rf2xx] opt: enabling PROMISCUOUS mode\n");
