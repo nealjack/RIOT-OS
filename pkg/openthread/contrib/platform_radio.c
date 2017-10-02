@@ -493,5 +493,5 @@ void otPlatRadioGetIeeeEui64(otInstance *aInstance, uint8_t *aIeee64Eui64)
 
 int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)
 {
-    return -100;
+    return -94;
 }
