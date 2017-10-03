@@ -38,7 +38,7 @@
 #define ENABLE_DEBUG (0)
 #include "debug.h"
 
-#define OPENTHREAD_QUEUE_LEN      (25)
+#define OPENTHREAD_QUEUE_LEN      (20)
 static msg_t _queue[OPENTHREAD_QUEUE_LEN];
 
 static kernel_pid_t _pid;
@@ -69,6 +69,7 @@ static void *_openthread_event_loop(void *arg) {
     /* enable OpenThread UART */
     otPlatUartEnable();
 
+    printf("netdev thread start with %u\n", _pid);
     /* init OpenThread */
     sInstance = otInstanceInitSingle();
 
@@ -104,10 +105,10 @@ static void *_openthread_event_loop(void *arg) {
         if (otTaskletsArePending(sInstance) == false) {
             msg_receive(&msg);
             switch (msg.type) {
-                case OPENTHREAD_XTIMER_MSG_TYPE_EVENT:
+                //case OPENTHREAD_XTIMER_MSG_TYPE_EVENT:
                     /* Tell OpenThread a time event was received */
-                    otPlatAlarmMilliFired(sInstance);
-                    break;
+                //    otPlatAlarmMilliFired(sInstance);
+                //    break;
                 case OPENTHREAD_NETDEV_MSG_TYPE_EVENT:
                     /* Received an event from driver */
                     dev = msg.content.ptr;
@@ -166,6 +167,11 @@ static void _event_cb(netdev_t *dev, netdev_event_t event) {
 /* get OpenThread thread pid */
 kernel_pid_t openthread_get_pid(void) {
     return _pid;
+}
+
+/* get OpenThread instance */
+otInstance* openthread_get_instance(void) {
+    return sInstance;
 }
 
 /* starts OpenThread thread */
