@@ -219,6 +219,7 @@ void send_pkt(otInstance *aInstance, netdev_t *dev, netdev_event_t event)
             break;
         case NETDEV_EVENT_TX_COMPLETE_DATA_PENDING:
             DEBUG("openthread: NETDEV_EVENT_TX_COMPLETE_DATA_PENDING\n\n");
+            ackFrame = _create_fake_ack_frame(true);
             otPlatRadioTxDone(aInstance, &sTransmitFrame, &ackFrame, OT_ERROR_NONE);
             break;
         case NETDEV_EVENT_TX_NOACK:
