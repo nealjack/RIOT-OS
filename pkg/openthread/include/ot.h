@@ -136,11 +136,31 @@ void openthread_radio_init(netdev_t *dev, uint8_t *tb, uint8_t *rb);
 int openthread_netdev_init(char *stack, int stacksize, char priority, const char *name, netdev_t *netdev);
 
 /**
+ * @brief   Starts OpenThread thread.
+ *
+ * @param[in]  stack              pointer to the stack designed for OpenThread timer
+ * @param[in]  stacksize          size of the stack
+ * @param[in]  priority           priority of the OpenThread timer stack
+ * @param[in]  name               name of the OpenThread timer stack
+ *
+ * @return  PID of OpenThread timer thread
+ * @return  -EINVAL if there was an error creating the thread
+ */
+int openthread_timer_init(char *stack, int stacksize, char priority, const char *name);
+
+/**
  * @brief   get PID of OpenThread thread.
  *
  * @return  PID of OpenThread thread
  */
 kernel_pid_t openthread_get_pid(void);
+
+/**
+ * @brief   get PID of OpenThread thread.
+ *
+ * @return  PID of OpenThread thread
+ */
+otInstance* openthread_get_instance(void);
 
 /**
  * @brief   Init OpenThread random

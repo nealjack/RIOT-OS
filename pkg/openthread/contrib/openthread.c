@@ -42,7 +42,8 @@ static at86rf2xx_t at86rf2xx_dev;
 
 static uint8_t rx_buf[OPENTHREAD_NETDEV_BUFLEN];
 static uint8_t tx_buf[OPENTHREAD_NETDEV_BUFLEN];
-static char ot_thread_stack[2 * THREAD_STACKSIZE_MAIN];
+static char ot_netdev_thread_stack[2 * THREAD_STACKSIZE_MAIN];
+static char ot_timer_thread_stack[THREAD_STACKSIZE_MAIN];
 
 void openthread_bootstrap(void)
 {
@@ -54,7 +55,10 @@ void openthread_bootstrap(void)
     at86rf2xx_setup(&at86rf2xx_dev, &at86rf2xx_params[0]);
     netdev_t *netdev = (netdev_t *) &at86rf2xx_dev;
 #endif
-
+    
     openthread_radio_init(netdev, tx_buf, rx_buf);
-    openthread_netdev_init(ot_thread_stack, sizeof(ot_thread_stack), THREAD_PRIORITY_MAIN + 1, "openthread", netdev);
+    openthread_timer_init(ot_timer_thread_stack, sizeof(ot_timer_thread_stack),
+                         THREAD_PRIORITY_MAIN - 1, "openthread_timer");
+    openthread_netdev_init(ot_netdev_thread_stack, sizeof(ot_netdev_thread_stack), 
+                           THREAD_PRIORITY_MAIN + 1, "openthread", netdev);
 }
