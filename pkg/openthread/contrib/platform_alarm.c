@@ -76,7 +76,7 @@ uint32_t otPlatAlarmMilliGetNow(void)
 static void *_openthread_timer_thread(void *arg) {
     _pid = thread_getpid();
 
-    printf("timer thread start with %u\n", _pid);
+    //printf("timer thread start with %u\n", _pid);
     msg_init_queue(_queue, OPENTHREAD_QUEUE_LEN);
     msg_t msg;
 

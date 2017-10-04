@@ -69,7 +69,7 @@ static void *_openthread_event_loop(void *arg) {
     /* enable OpenThread UART */
     otPlatUartEnable();
 
-    printf("netdev thread start with %u\n", _pid);
+    //printf("netdev thread start with %u\n", _pid);
     /* init OpenThread */
     sInstance = otInstanceInitSingle();
 
