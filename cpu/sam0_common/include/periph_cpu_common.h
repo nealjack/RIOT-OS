@@ -64,9 +64,6 @@ typedef uint32_t gpio_t;
  * @{
  */
 #define PM_NUM_MODES        (3)
-/* @name   We want to make this as a borad-specific configuration rather than cpu-specific */
-#define PM_BLOCKER_INITIAL  { .val_u32 = 0x01010101 }
-/** @} */
 
 #ifndef DOXYGEN
 /**
