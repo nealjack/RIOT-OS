@@ -62,25 +62,31 @@ extern "C" {
  * @{
  */
 
-#define CLOCK_USE_PLL       (1)
+#define CLOCK_USE_PLL           (0)
+#define CLOCK_USE_XOSC32_DFLL   (0)
+#define CLOCK_USE_OSCULP32_DFLL (1)
 
 #if CLOCK_USE_PLL
-/* edit these values to adjust the PLL output frequency */
-#define CLOCK_PLL_MUL       (47U)               /* must be >= 31 & <= 95 */
-#define CLOCK_PLL_DIV       (1U)                /* adjust to your needs */
-/* generate the actual used core clock frequency */
-#define CLOCK_CORECLOCK     (((CLOCK_PLL_MUL + 1) * 1000000U) / CLOCK_PLL_DIV)
+  /* edit these values to adjust the PLL output frequency */
+  #define CLOCK_PLL_MUL       (47U)               /* must be >= 31 & <= 95 */
+  #define CLOCK_PLL_DIV       (1U)                /* adjust to your needs */
+  /* generate the actual used core clock frequency */
+  #define CLOCK_CORECLOCK     (((CLOCK_PLL_MUL + 1) * 1000000U) / CLOCK_PLL_DIV)
 #elif CLOCK_USE_XOSC32_DFLL
-    /* Settings for 32 kHz external oscillator and 48 MHz DFLL */
-#define CLOCK_CORECLOCK     (48000000U)
-#define CLOCK_XOSC32K       (32768UL)
-#define CLOCK_8MHZ          (1)
-#define GEN2_ULP32K         (1)
+  /* Settings for 32 kHz external oscillator and 48 MHz DFLL */
+  #define CLOCK_CORECLOCK     (48000000U)
+  #define CLOCK_XOSC32K       (32768UL)
+  #define CLOCK_8MHZ          (1)
+  #define GEN2_ULP32K         (1)
+  #define CLOCK_DIV           (1U)
+#elif CLOCK_USE_OSCULP32_DFLL
+  #define CLOCK_CORECLOCK     (48000000U)
+  #define CLOCK_OSCULP32K     (32768U)
+  #define CLOCK_8MHZ          (0)
+  #define GEN2_ULP32K         (1)
+  #define CLOCK_DIV           (1U)
 #else
-/* edit this value to your needs */
-#define CLOCK_DIV           (1U)
-/* generate the actual core clock frequency */
-#define CLOCK_CORECLOCK     (8000000 / CLOCK_DIV)
+  #error No clock configured!
 #endif
 /** @} */
 
@@ -248,7 +254,7 @@ static const spi_conf_t spi_config[] = {
 #define TMP006_PARAMS_BOARD     { .i2c  = I2C_0, \
                                   .addr = 0x44, \
                                   .rate  = TMP006_CONFIG_CR_AS2 }
-#define TMP006_CONVERSION_TIME  550000UL  
+#define TMP006_CONVERSION_TIME  550000UL
 
 #define APDS9007_PARAMS_BOARD    { .gpio = GPIO_PIN(PA,28), \
 								   .adc  = ADC_PIN_PA08, \

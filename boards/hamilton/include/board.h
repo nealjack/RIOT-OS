@@ -45,6 +45,8 @@ extern "C" {
  */
 #define XTIMER_DEV                     TIMER_1
 #define XTIMER_CHAN                    (0)
+#define XTIMER_HZ                      (32768U)
+
 
  /**
   * @name AT86RF233 configuration
