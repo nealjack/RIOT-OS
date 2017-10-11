@@ -55,7 +55,7 @@ static void clk_init(void)
 {
     /* enable clocks for the power, sysctrl and gclk modules */
     PM->APBAMASK.reg = (PM_APBAMASK_PM | PM_APBAMASK_SYSCTRL |
-                        PM_APBAMASK_GCLK);
+                        PM_APBAMASK_GCLK | PM_APBAMASK_RTC);
 
     /* adjust NVM wait states */
     PM->APBBMASK.reg |= PM_APBBMASK_NVMCTRL;
